@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <h1>Face Recognition</h1>
+        <video id="video" width="720" height="560" autoplay></video>
+        <button id="snap">Detect</button>
+        <canvas id="canvas" width="720" height="560"></canvas>
+        <p id="welcome-message"></p>
+
+        <script>
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const snap = document.getElementById('snap');
+            const welcomeMessage = document.getElementById('welcome-message');
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                });
+            }
+
+            snap.addEventListener('click', function() {
+                // Redimensionar la imagen a 224x224
+                context.drawImage(video, 0, 0, 224, 224);
+                let imageData = context.getImageData(0, 0, 224, 224);
+/*
+                // Normalizar la imagen
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    imageData.data[i] /= 255;
+                    imageData.data[i+1] /= 255;
+                    imageData.data[i+2] /= 255;
+                }
+*/
+                context.putImageData(imageData, 0, 0);
+                const data = canvas.toDataURL('image/jpeg');
+
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/octet-stream',
+                    },
+                    body: data.split(',')[1],
+                }).then(response => response.json()).then(data => {
+                    const prediction = data; 
+                    welcomeMessage.textContent = `Hola ${prediction}, bienvenido`;
+                });
+            });
+        </script>
+    </body>
+</html>

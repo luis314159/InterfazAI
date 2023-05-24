@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Añadir el icono a la página -->
+        <link rel="icon" sizes="192x192" href="https://static.wixstatic.com/media/50abbb_e0b55473e4374fc0b1bd7295cb14c06e%7Emv2.png/v1/fill/w_32%2Ch_32%2Clg_1%2Cusm_0.66_1.00_0.01/50abbb_e0b55473e4374fc0b1bd7295cb14c06e%7Emv2.png">
+        <style>
+            /* Establecer el color de fondo y el color del texto */
+            body {
+                background-color: #173A7B;
+                color: white;
+                text-align: center;
+            }
+            /* Establecer la disposición de la cámara, el lienzo y el botón */
+            #video, #canvas {
+                display: inline-block;
+                width: 720px;
+                height: 560px;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Añadir el logo de ULSA a la izquierda del título -->
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <img src="https://static.wixstatic.com/media/50abbb_734c476993ab44d887e1d59ed12e5767~mv2.png/v1/crop/x_0,y_140,w_1846,h_636/fill/w_219,h_75,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/ULSA%20LOGO%20BANCO%20PNG.png" alt="ULSA LOGO BANCO PNG.png" style="width:175px;height:60px;object-fit:cover" srcset="https://static.wixstatic.com/media/50abbb_734c476993ab44d887e1d59ed12e5767~mv2.png/v1/crop/x_0,y_140,w_1846,h_636/fill/w_219,h_75,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/ULSA%20LOGO%20BANCO%20PNG.png" fetchpriority="high">
+            <h1>Face Recognition</h1>
+        </div>
+        <!-- Colocar el video y el lienzo uno al lado del otro -->
+        <div style="display: flex; justify-content: center;">
+            <video id="video" autoplay></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        <button id="snap">Detect</button>
+        <p id="welcome-message"></p>
+
+        <script>
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const snap = document.getElementById('snap');
+            const welcomeMessage = document.getElementById('welcome-message');
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                });
+            }
+
+            snap.addEventListener('click', function() {
+                context.drawImage(video, 0, 0, 200, 140);
+                let imageData = context.getImageData(0, 0, 720, 560);
+
+
+                context.putImageData(imageData, 0, 0);
+                const data = canvas.toDataURL('image/jpeg');
+
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/octet-stream',
+                    },
+                    body: data.split(',')[1],
+                }).then(response => response.json()).then(data => {
+                    const prediction = data; 
+                    welcomeMessage.textContent = `Hola ${prediction}, bienvenido`;
+                });
+            });
+        </script>
+    </body>
+</html>
